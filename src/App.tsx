@@ -23,24 +23,35 @@ export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [soccerTeams, setSoccerTeams] = useState<SoccerTeamState[]>(INITIAL_SOCCER_TEAMS);
 
-  // Prepopulate the cart with the exact elements to match the mockup's mathematics
+  // 1. AUTOMATIC LOAD ROUTINE: Pulls your actual Firestore document data on startup
   useEffect(() => {
-    const defaultJaya = PRODUCTS.find((p) => p.id === "gro_jaya_rice");
-    const defaultOil = PRODUCTS.find((p) => p.id === "gro_coconut_oil");
+    const activeUsername = "anandhu_k";
 
-    if (defaultJaya && defaultOil) {
-      // Modify items locally to match the precise math from the mockup billing slip
-      // Jaya Rice: selling at 45.00, MRP: 60.00
-      // Coconut Oil in cart: selling at 85.00, MRP: 100.00
-      const activeJaya: Product = { ...defaultJaya, price: 45.0, mrp: 60.0 };
-      const activeOil: Product = { ...defaultOil, name: "Coconut Oil (1L)", price: 85.0, mrp: 100.0 };
-
-      setCart([
-        { product: activeJaya, quantity: 2 },
-        { product: activeOil, quantity: 1 },
-      ]);
-    }
+    fetch(`https://supplyco-backend-3o29.onrender.com/user/${activeUsername}/load`)
+      .then((res) => res.json())
+      .then((cloudData) => {
+        if (cloudData && cloudData.profile && Object.keys(cloudData.profile).length > 0) {
+          setUser(cloudData.profile);
+          setCart(cloudData.cart || []);
+        }
+      })
+      .catch((e) => console.error("Failed to load user state from your backend:", e));
   }, []);
+
+  // 2. AUTOMATIC SAVE ROUTINE: Syncs changes live to the cloud database when items are updated
+  useEffect(() => {
+    const activeUsername = "anandhu_k";
+    if (!user || !user.fullName) return;
+
+    fetch(`https://supplyco-backend-3o29.onrender.com/user/${activeUsername}/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        profile: user,
+        cart: cart,
+      }),
+    }).catch((e) => console.error("Failed to save changes to your backend:", e));
+  }, [user, cart]);
 
   const totalCartItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -170,11 +181,11 @@ export default function App() {
 
   const activeStore = STORES.find((s) => s.id === user?.activeStoreId) || STORES[0];
 
-  const themeClass = 
-    user?.theme === "dark" 
-      ? "dark-theme-wrapper text-slate-100" 
-      : user?.theme === "vintage" 
-        ? "vintage-theme-wrapper text-amber-950" 
+  const themeClass =
+    user?.theme === "dark"
+      ? "dark-theme-wrapper text-slate-100"
+      : user?.theme === "vintage"
+        ? "vintage-theme-wrapper text-amber-950"
         : "light-theme-wrapper text-slate-800";
 
   return (
@@ -209,7 +220,7 @@ export default function App() {
 
           <main className="max-w-7xl mx-auto px-4 py-6 md:px-8">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-              
+
               {/* Desktop Side Nav Menu (Hidden on viewport < 768px) */}
               <aside className="hidden md:flex md:col-span-3 flex-col gap-2 bg-[#fdfbf7] border border-[#c3c6d1] rounded-2xl p-4 h-fit sticky top-20 shadow-sm">
                 <div className="flex items-center gap-3 pb-4 mb-2 border-b border-slate-100">
@@ -228,9 +239,8 @@ export default function App() {
 
                 <button
                   onClick={() => setActiveTab("home")}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "home" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${activeTab === "home" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
+                    }`}
                 >
                   <Home className="w-4 h-4" />
                   <span>Home Dashboard / ഹോം</span>
@@ -238,9 +248,8 @@ export default function App() {
 
                 <button
                   onClick={() => setActiveTab("groceries")}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "groceries" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${activeTab === "groceries" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
+                    }`}
                 >
                   <Grid className="w-4 h-4" />
                   <span>Groceries Listing / പലചരക്ക്</span>
@@ -248,9 +257,8 @@ export default function App() {
 
                 <button
                   onClick={() => setActiveTab("vegetables")}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "vegetables" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${activeTab === "vegetables" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
+                    }`}
                 >
                   <Grid className="w-4 h-4" />
                   <span>Vegetable Listing / പച്ചക്കറികൾ</span>
@@ -258,9 +266,8 @@ export default function App() {
 
                 <button
                   onClick={() => setActiveTab("sabari")}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "sabari" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${activeTab === "sabari" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
+                    }`}
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>Sabari Brands / ശബരി</span>
@@ -268,9 +275,8 @@ export default function App() {
 
                 <button
                   onClick={() => setActiveTab("ai-saver")}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "ai-saver" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${activeTab === "ai-saver" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
+                    }`}
                 >
                   <Sparkles className="w-4 h-4 text-emerald-600 animate-pulse" />
                   <span>AI Smart Saver / സ്മാർട്ട് സേവർ</span>
@@ -278,9 +284,8 @@ export default function App() {
 
                 <button
                   onClick={() => setActiveTab("cart")}
-                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "cart" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
-                  }`}
+                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${activeTab === "cart" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <ShoppingCart className="w-4 h-4" />
@@ -295,9 +300,8 @@ export default function App() {
 
                 <button
                   onClick={() => setActiveTab("profile")}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "profile" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${activeTab === "profile" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
+                    }`}
                 >
                   <User className="w-4 h-4" />
                   <span>Account Profile</span>
@@ -305,9 +309,8 @@ export default function App() {
 
                 <button
                   onClick={() => setActiveTab("settings")}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "settings" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${activeTab === "settings" ? "bg-emerald-800 text-white shadow-sm" : "hover:bg-slate-100 text-slate-600"
+                    }`}
                 >
                   <Settings className="w-4 h-4" />
                   <span>Settings / ക്രമീകരണങ്ങൾ</span>
@@ -323,13 +326,12 @@ export default function App() {
 
           {/* Sticky Mobile Navigation Bar (Visible on viewport < 768px) */}
           <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl shadow-[0_-4px_12px_rgba(0,35,78,0.05)] bg-[#fdfbf7]/90 backdrop-blur-md border-t border-amber-900/10 flex justify-around items-center px-4 pb-4 pt-2">
-            
+
             {/* Home Tab */}
             <button
               onClick={() => setActiveTab("home")}
-              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${
-                activeTab === "home" ? "text-emerald-800 font-bold scale-105" : "text-slate-500 hover:text-slate-800"
-              }`}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${activeTab === "home" ? "text-emerald-800 font-bold scale-105" : "text-slate-500 hover:text-slate-800"
+                }`}
             >
               <Home className="w-5 h-5 mb-0.5" />
               <span className="text-[10px] tracking-tight">Home</span>
@@ -338,11 +340,10 @@ export default function App() {
             {/* Categories tab router linking to groceries */}
             <button
               onClick={() => setActiveTab("groceries")}
-              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${
-                activeTab === "groceries" || activeTab === "vegetables" || activeTab === "sabari"
-                  ? "bg-slate-200 text-emerald-800 font-bold rounded-2xl"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${activeTab === "groceries" || activeTab === "vegetables" || activeTab === "sabari"
+                ? "bg-slate-200 text-emerald-800 font-bold rounded-2xl"
+                : "text-slate-500 hover:text-slate-800"
+                }`}
             >
               <Grid className="w-5 h-5 mb-0.5" />
               <span className="text-[10px] tracking-tight">Listings</span>
@@ -351,9 +352,8 @@ export default function App() {
             {/* AI Assistant access button */}
             <button
               onClick={() => setActiveTab("ai-saver")}
-              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${
-                activeTab === "ai-saver" ? "text-emerald-800 font-bold scale-105" : "text-slate-500 hover:text-slate-800"
-              }`}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${activeTab === "ai-saver" ? "text-emerald-800 font-bold scale-105" : "text-slate-500 hover:text-slate-800"
+                }`}
             >
               <Sparkles className="w-5 h-5 mb-0.5 text-emerald-700 animate-pulse animate-duration-1000" />
               <span className="text-[10px] tracking-tight">AI Saver</span>
@@ -362,9 +362,8 @@ export default function App() {
             {/* Account Tab */}
             <button
               onClick={() => setActiveTab("profile")}
-              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${
-                activeTab === "profile" ? "text-emerald-800 font-bold scale-105" : "text-slate-500 hover:text-slate-800"
-              }`}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${activeTab === "profile" ? "text-emerald-800 font-bold scale-105" : "text-slate-500 hover:text-slate-800"
+                }`}
             >
               <User className="w-5 h-5 mb-0.5" />
               <span className="text-[10px] tracking-tight">Account</span>
@@ -373,9 +372,8 @@ export default function App() {
             {/* Settings Tab */}
             <button
               onClick={() => setActiveTab("settings")}
-              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${
-                activeTab === "settings" ? "text-emerald-800 font-bold scale-105" : "text-slate-500 hover:text-slate-800"
-              }`}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${activeTab === "settings" ? "text-emerald-800 font-bold scale-105" : "text-slate-500 hover:text-slate-800"
+                }`}
             >
               <Settings className="w-5 h-5 mb-0.5" />
               <span className="text-[10px] tracking-tight">Settings</span>
