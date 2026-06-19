@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Mail, Lock, User, Calendar, MapPin, Map, Store, ShieldAlert } from "lucide-react";
 import { UserProfile, StoreLocation } from "../types";
 import { STORES, INITIAL_USER } from "../data";
+import { auth } from "../utils/firebase";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 
 interface LoginRegisterProps {
   onAuthenticated: (user: UserProfile) => void;
@@ -22,46 +24,74 @@ export default function LoginRegister({ onAuthenticated }: LoginRegisterProps) {
   const [rationCardType, setRationCardType] = useState<"AAY" | "PHH" | "NPS" | "NPNS">("PHH");
   const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError("Please fill in all credentials. / ദയവായി വിവരങ്ങൾ പൂരിപ്പിക്കുക.");
       return;
     }
-    // Simulate auth success
-    const updatedUser: UserProfile = {
-      ...INITIAL_USER,
-      email,
-      fullName: email === "anandhu.k@example.com" ? "Anandhu K." : email.split("@")[0]
-    };
-    onAuthenticated(updatedUser);
+    setError("");
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      const loggedUser: UserProfile = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email || email,
+        fullName: email === "anandhu.k@example.com" ? "Anandhu K." : email.split("@")[0],
+        phone: "",
+        dob: "",
+        addressLine1: "",
+        city: "",
+        district: "",
+        state: "Kerala",
+        pincode: "",
+        isVerified: true,
+        activeStoreId: "tvm_eastfort",
+        notificationsEnabled: true,
+        theme: "vintage",
+        language: "bilingual"
+      };
+      onAuthenticated(loggedUser);
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      setError(err.message || "Invalid credentials / തെറ്റായ ലോഗിൻ വിവരങ്ങൾ");
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !email || !selectedStore || !password) {
       setError("All highlighted fields are required. / പ്രധാനപ്പെട്ട വിവരങ്ങൾ നൽകുക.");
       return;
     }
-    const newUser: UserProfile = {
-      fullName,
-      email,
-      phone,
-      dob,
-      addressLine1: "TC 12/345, Kowdiar PO",
-      city: place,
-      district: "Thiruvananthapuram",
-      state: stateValue === "KL" ? "Kerala" : "Other State",
-      pincode: "695003",
-      isVerified: true,
-      activeStoreId: selectedStore,
-      notificationsEnabled: true,
-      theme: "vintage",
-      language: "bilingual",
-      rationCardNumber: rationCardNumber || undefined,
-      rationCardType: rationCardNumber ? rationCardType : undefined
-    };
-    onAuthenticated(newUser);
+    setError("");
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      const newUser: UserProfile = {
+        uid: firebaseUser.uid,
+        fullName,
+        email,
+        phone,
+        dob,
+        addressLine1: "TC 12/345, Kowdiar PO",
+        city: place,
+        district: "Thiruvananthapuram",
+        state: stateValue === "KL" ? "Kerala" : "Other State",
+        pincode: "695003",
+        isVerified: true,
+        activeStoreId: selectedStore,
+        notificationsEnabled: true,
+        theme: "vintage",
+        language: "bilingual",
+        rationCardNumber: rationCardNumber || undefined,
+        rationCardType: rationCardNumber ? rationCardType : undefined
+      };
+      onAuthenticated(newUser);
+    } catch (err: any) {
+      console.error("Registration failed:", err);
+      setError(err.message || "Registration failed / രജിസ്ട്രേഷൻ പരാജയപ്പെട്ടു.");
+    }
   };
 
   return (

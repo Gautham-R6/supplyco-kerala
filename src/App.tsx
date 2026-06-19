@@ -4,6 +4,8 @@ import { User, Settings, ShoppingCart, Home, Grid, Sparkles, MapPin } from "luci
 import { AppTab, CartItem, UserProfile, Product } from "./types";
 import { INITIAL_USER, PRODUCTS, STORES } from "./data";
 import { INITIAL_SOCCER_TEAMS, SoccerTeamState } from "./utils/pricing";
+import { auth } from "./utils/firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import LoadingScreen from "./components/LoadingScreen";
 import LoginRegister from "./components/LoginRegister";
@@ -25,37 +27,66 @@ export default function App() {
   const [splashFinished, setSplashFinished] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  // 1. AUTOMATIC LOAD ROUTINE: Pulls your actual Firestore document data on startup
+  // 1. AUTOMATIC LOAD ROUTINE: Listen to Firebase Auth state change and load user data on session restoration
   useEffect(() => {
-    const savedUsername = localStorage.getItem("supplyco_username");
-    if (savedUsername) {
-      fetch(`https://supplyco-backend-3o29.onrender.com/user/${savedUsername}/load`)
-        .then((res) => res.json())
-        .then((cloudData) => {
-          if (cloudData && cloudData.profile && Object.keys(cloudData.profile).length > 0) {
-            const profile = {
-              ...cloudData.profile,
-              username: cloudData.profile.username || savedUsername
-            };
-            setUser(profile);
-            setCart(cloudData.cart || []);
-          } else {
-            localStorage.removeItem("supplyco_username");
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        fetch(`https://supplyco-backend-3o29.onrender.com/user/${firebaseUser.uid}/load`)
+          .then((res) => res.json())
+          .then((cloudData) => {
+            if (cloudData && cloudData.profile && Object.keys(cloudData.profile).length > 0) {
+              const profile = {
+                ...cloudData.profile,
+                uid: firebaseUser.uid,
+              };
+              setUser(profile);
+              setCart(cloudData.cart || []);
+            } else {
+              // Create default profile for first-time session
+              const defaultProfile: UserProfile = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email || "",
+                fullName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
+                phone: "",
+                dob: "",
+                addressLine1: "",
+                city: "",
+                district: "",
+                state: "Kerala",
+                pincode: "",
+                isVerified: true,
+                activeStoreId: "tvm_eastfort",
+                notificationsEnabled: true,
+                theme: "vintage",
+                language: "bilingual"
+              };
+              setUser(defaultProfile);
+              setCart([]);
+              fetch(`https://supplyco-backend-3o29.onrender.com/user/${firebaseUser.uid}/save`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  profile: defaultProfile,
+                  cart: []
+                })
+              }).catch((e) => console.error("Failed to save default profile:", e));
+            }
+          })
+          .catch((e) => {
+            console.error("Failed to load user state from your backend on startup:", e);
             setUser(null);
-          }
-        })
-        .catch((e) => {
-          console.error("Failed to load user state from your backend on startup:", e);
-          localStorage.removeItem("supplyco_username");
-          setUser(null);
-        })
-        .finally(() => {
-          setInitialLoading(false);
-        });
-    } else {
-      setUser(null);
-      setInitialLoading(false);
-    }
+          })
+          .finally(() => {
+            setInitialLoading(false);
+          });
+      } else {
+        setUser(null);
+        setCart([]);
+        setInitialLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   // Transition out of loading screen once splash completes AND data fetching completes
@@ -68,15 +99,13 @@ export default function App() {
   // 2. AUTOMATIC SAVE ROUTINE: Syncs changes live to the cloud database when items are updated
   useEffect(() => {
     if (initialLoading) return;
-    if (!user || !user.fullName) return;
+    if (!user || !user.uid || !user.fullName) return;
 
-    const activeUsername = user.username || user.email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
-
-    fetch(`https://supplyco-backend-3o29.onrender.com/user/${activeUsername}/save`, {
+    fetch(`https://supplyco-backend-3o29.onrender.com/user/${user.uid}/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        profile: { ...user, username: activeUsername },
+        profile: user,
         cart: cart,
       }),
     }).catch((e) => console.error("Failed to save changes to your backend:", e));
@@ -84,29 +113,27 @@ export default function App() {
 
   // Handle successful login/registration authentication
   const handleAuthenticated = (authenticatedUser: UserProfile) => {
-    const username = authenticatedUser.username || authenticatedUser.email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
-    const userWithUsername = { ...authenticatedUser, username };
+    const uid = authenticatedUser.uid;
+    if (!uid) return;
 
-    localStorage.setItem("supplyco_username", username);
-
-    fetch(`https://supplyco-backend-3o29.onrender.com/user/${username}/load`)
+    fetch(`https://supplyco-backend-3o29.onrender.com/user/${uid}/load`)
       .then((res) => res.json())
       .then((cloudData) => {
         if (cloudData && cloudData.profile && Object.keys(cloudData.profile).length > 0) {
           const profile = {
             ...cloudData.profile,
-            username: cloudData.profile.username || username
+            uid: uid
           };
           setUser(profile);
           setCart(cloudData.cart || []);
         } else {
-          setUser(userWithUsername);
+          setUser(authenticatedUser);
           setCart([]);
-          fetch(`https://supplyco-backend-3o29.onrender.com/user/${username}/save`, {
+          fetch(`https://supplyco-backend-3o29.onrender.com/user/${uid}/save`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              profile: userWithUsername,
+              profile: authenticatedUser,
               cart: []
             })
           }).catch((err) => console.error("Failed to save new user profile:", err));
@@ -115,7 +142,7 @@ export default function App() {
       })
       .catch((err) => {
         console.error("Failed to load user state during authentication:", err);
-        setUser(userWithUsername);
+        setUser(authenticatedUser);
         setCart([]);
         setActiveTab("home");
       });
@@ -159,7 +186,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("supplyco_username");
+    signOut(auth).catch((e) => console.error("Failed to sign out:", e));
     setUser(null);
     setCart([]);
     setActiveTab("login");
