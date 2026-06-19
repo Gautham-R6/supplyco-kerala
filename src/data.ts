@@ -500,36 +500,59 @@ export const PRODUCTS: Product[] = [
 ];
 
 // Connects the frontend directly to your running Python backend
-// Smart Cloud Bridge: Maps your FastAPI/Firestore keys to React component keys
 fetch("https://supplyco-backend-3o29.onrender.com/subsidy")
   .then(res => res.json())
   .then(liveData => {
-    if (liveData && liveData.length > 0) {
-      // Map the backend structure to the frontend Product structure
-      const mappedData = liveData.map((item: any) => ({
-        id: item.id || `gro_${Math.random()}`,
-        name: item.name || "Unknown Item",
-        nameMl: item.name_malayalam || item.name || "",
-        category: item.is_subsidy ? "groceries" : "sabari", // fallback classification
-        price: item.price || 0,
-        mrp: item.price ? item.price * 1.2 : 0, // baseline estimation if mrp missing
-        isSubsidy: item.is_subsidy || false,
-        unit: item.unit || "1 kg",
-        aisle: "Aisle A1",
-        image: item.image_url || "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=400",
-        inStock: true,
-        description: item.offer_text || "Fresh stock available.",
-        // Safeguards to completely stop the Sabari Screen White Crash:
-        real_mrp: item.price ? item.price * 1.2 : 0,
-        supplyco_mrp: item.price || 0,
-        offer_price: item.price || null,
-        offer_expires_at: item.offer_expires_at || new Date().toISOString(),
-        soccer_eleven_team: "General"
-      }));
+    // Check if live data actually arrived before touching the array!
+    if (Array.isArray(liveData) && liveData.length > 0) {
 
-      PRODUCTS.length = 0; // Clear the static placeholders safely
-      PRODUCTS.push(...mappedData); // Inject your beautifully formatted database items!
-      console.log("Cloud Database successfully injected into UI layout.");
+      const mappedData = liveData.map((item: any) => {
+        // Precise Category Mapping based on Name strings or flags
+        let assignedCategory = "groceries";
+        const lowerName = (item.name || "").toLowerCase();
+
+        if (lowerName.includes("sabari")) {
+          assignedCategory = "sabari";
+        } else if (
+          lowerName.includes("tomato") ||
+          lowerName.includes("onion") ||
+          lowerName.includes("savala") ||
+          lowerName.includes("carrot") ||
+          lowerName.includes("potato") ||
+          lowerName.includes("urulakkizhangu")
+        ) {
+          assignedCategory = "vegetables";
+        }
+
+        return {
+          id: item.id || `cloud_${Math.random().toString(36).substr(2, 9)}`,
+          name: item.name || "Unknown Product",
+          nameMl: item.name_malayalam || item.name || "",
+          category: assignedCategory,
+          price: Number(item.price) || 0,
+          mrp: item.price ? Number(item.price) * 1.25 : 0,
+          isSubsidy: item.is_subsidy !== undefined ? item.is_subsidy : false,
+          unit: item.unit || "1 kg",
+          aisle: assignedCategory === "vegetables" ? "Veg Stall" : "Aisle A1",
+          image: item.image_url || "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=400",
+          inStock: true,
+          description: item.offer_text || "Fresh stock direct from Supplyco hub.",
+          // Strict Fail-Safe fallbacks to eliminate the Sabari View Crash completely:
+          real_mrp: item.price ? Number(item.price) * 1.25 : 0,
+          supplyco_mrp: Number(item.price) || 0,
+          offer_price: item.offer_text ? Number(item.price) * 0.9 : null,
+          offer_expires_at: item.offer_expires_at || new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+          soccer_eleven_team: lowerName.includes("tea") ? "Brazil" : "Argentina"
+        };
+      });
+
+      PRODUCTS.length = 0; // Clear safely now that mapping succeeded 
+      PRODUCTS.push(...mappedData);
+      console.log("Success: Cloud items fully parsed into layout schemas.");
+    } else {
+      console.log("Notice: Backend returned empty rows. Retaining local fallback design parameters.");
     }
   })
-  .catch(e => console.error("Database connection or parsing failed:", e));
+  .catch(e => {
+    console.error("Critical: Network stream or parse routine collapsed:", e);
+  });
