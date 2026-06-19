@@ -26,6 +26,7 @@ export interface CartItem {
 }
 
 export interface UserProfile {
+  username?: string;
   fullName: string;
   email: string;
   phone: string;

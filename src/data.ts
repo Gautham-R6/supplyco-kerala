@@ -508,7 +508,7 @@ fetch("https://supplyco-backend-3o29.onrender.com/subsidy")
 
       const mappedData = liveData.map((item: any) => {
         // Precise Category Mapping based on Name strings or flags
-        let assignedCategory = "groceries";
+        let assignedCategory: "groceries" | "vegetables" | "sabari" = "groceries";
         const lowerName = (item.name || "").toLowerCase();
 
         if (lowerName.includes("sabari")) {

@@ -19,39 +19,107 @@ import AISmartSaver from "./components/AISmartSaver";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<AppTab>("loading");
-  const [user, setUser] = useState<UserProfile | null>(INITIAL_USER);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [soccerTeams, setSoccerTeams] = useState<SoccerTeamState[]>(INITIAL_SOCCER_TEAMS);
+  const [splashFinished, setSplashFinished] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // 1. AUTOMATIC LOAD ROUTINE: Pulls your actual Firestore document data on startup
   useEffect(() => {
-    const activeUsername = "anandhu_k";
-
-    fetch(`https://supplyco-backend-3o29.onrender.com/user/${activeUsername}/load`)
-      .then((res) => res.json())
-      .then((cloudData) => {
-        if (cloudData && cloudData.profile && Object.keys(cloudData.profile).length > 0) {
-          setUser(cloudData.profile);
-          setCart(cloudData.cart || []);
-        }
-      })
-      .catch((e) => console.error("Failed to load user state from your backend:", e));
+    const savedUsername = localStorage.getItem("supplyco_username");
+    if (savedUsername) {
+      fetch(`https://supplyco-backend-3o29.onrender.com/user/${savedUsername}/load`)
+        .then((res) => res.json())
+        .then((cloudData) => {
+          if (cloudData && cloudData.profile && Object.keys(cloudData.profile).length > 0) {
+            const profile = {
+              ...cloudData.profile,
+              username: cloudData.profile.username || savedUsername
+            };
+            setUser(profile);
+            setCart(cloudData.cart || []);
+          } else {
+            localStorage.removeItem("supplyco_username");
+            setUser(null);
+          }
+        })
+        .catch((e) => {
+          console.error("Failed to load user state from your backend on startup:", e);
+          localStorage.removeItem("supplyco_username");
+          setUser(null);
+        })
+        .finally(() => {
+          setInitialLoading(false);
+        });
+    } else {
+      setUser(null);
+      setInitialLoading(false);
+    }
   }, []);
+
+  // Transition out of loading screen once splash completes AND data fetching completes
+  useEffect(() => {
+    if (!initialLoading && splashFinished) {
+      setActiveTab(user ? "home" : "login");
+    }
+  }, [initialLoading, splashFinished, user]);
 
   // 2. AUTOMATIC SAVE ROUTINE: Syncs changes live to the cloud database when items are updated
   useEffect(() => {
-    const activeUsername = "anandhu_k";
+    if (initialLoading) return;
     if (!user || !user.fullName) return;
+
+    const activeUsername = user.username || user.email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
 
     fetch(`https://supplyco-backend-3o29.onrender.com/user/${activeUsername}/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        profile: user,
+        profile: { ...user, username: activeUsername },
         cart: cart,
       }),
     }).catch((e) => console.error("Failed to save changes to your backend:", e));
-  }, [user, cart]);
+  }, [user, cart, initialLoading]);
+
+  // Handle successful login/registration authentication
+  const handleAuthenticated = (authenticatedUser: UserProfile) => {
+    const username = authenticatedUser.username || authenticatedUser.email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
+    const userWithUsername = { ...authenticatedUser, username };
+
+    localStorage.setItem("supplyco_username", username);
+
+    fetch(`https://supplyco-backend-3o29.onrender.com/user/${username}/load`)
+      .then((res) => res.json())
+      .then((cloudData) => {
+        if (cloudData && cloudData.profile && Object.keys(cloudData.profile).length > 0) {
+          const profile = {
+            ...cloudData.profile,
+            username: cloudData.profile.username || username
+          };
+          setUser(profile);
+          setCart(cloudData.cart || []);
+        } else {
+          setUser(userWithUsername);
+          setCart([]);
+          fetch(`https://supplyco-backend-3o29.onrender.com/user/${username}/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              profile: userWithUsername,
+              cart: []
+            })
+          }).catch((err) => console.error("Failed to save new user profile:", err));
+        }
+        setActiveTab("home");
+      })
+      .catch((err) => {
+        console.error("Failed to load user state during authentication:", err);
+        setUser(userWithUsername);
+        setCart([]);
+        setActiveTab("home");
+      });
+  };
 
   const totalCartItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -91,14 +159,16 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("supplyco_username");
     setUser(null);
+    setCart([]);
     setActiveTab("login");
   };
 
   // Safe handler to transition tabs instantly
   const renderActiveTab = () => {
     if (!user) {
-      return <LoginRegister onAuthenticated={(usr) => { setUser(usr); setActiveTab("home"); }} />;
+      return <LoginRegister onAuthenticated={handleAuthenticated} />;
     }
 
     switch (activeTab) {
@@ -192,16 +262,13 @@ export default function App() {
     <div className={`font-sans min-h-screen pb-24 md:pb-8 transition-colors duration-300 ${themeClass}`}>
       {/* Loading Splash page */}
       {activeTab === "loading" && (
-        <LoadingScreen onFinished={() => setActiveTab(user ? "home" : "login")} />
+        <LoadingScreen onFinished={() => setSplashFinished(true)} />
       )}
 
       {/* Auth page routing */}
       {activeTab === "login" && !user && (
         <LoginRegister
-          onAuthenticated={(usr) => {
-            setUser(usr);
-            setActiveTab("home");
-          }}
+          onAuthenticated={handleAuthenticated}
         />
       )}
 
