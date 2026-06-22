@@ -109,11 +109,17 @@ export default function HeaderNav({
               onClick={() => onTabChange("profile")}
               className="ml-2 w-8 h-8 rounded-full overflow-hidden border-2 border-emerald-800 flex items-center justify-center shadow-sm cursor-pointer hover:opacity-85 transition-opacity"
             >
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCESFr7dzPNBqU449PdjF-XH0pTeUl5-0LnTL3I-YwEKy_CP6vVEu0msa3yBgNnH5xGuQA9L4Sj7SnIZrTs3ZdepJ99DrZXdo_QzujEFD3YB_E51bEynzxGJbZI8k-ZdcFd2F99a-hAaBGHxwgSoczPutSC7R8fLPPnG4fVQ83s_lqGncoPMkSldI43F7FrEIgaSA8aB9sYZnkcAIWYEYVoYGNx6abmmJBSH96YkhXXcRxcR-CBoRkvIhA0kRRzBb0Q6_1usMAHBZc"
-                alt="Profile Avatar"
-                className="w-full h-full object-cover"
-              />
+              {user.profilePic ? (
+                <img
+                  src={user.profilePic}
+                  alt="Profile Avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-emerald-800 text-white flex items-center justify-center font-bold text-xs uppercase">
+                  {user.fullName ? user.fullName.charAt(0) : "U"}
+                </div>
+              )}
             </button>
           </div>
         </div>
@@ -139,11 +145,17 @@ export default function HeaderNav({
           <div className="px-6 pb-6 border-b border-slate-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <img
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCESFr7dzPNBqU449PdjF-XH0pTeUl5-0LnTL3I-YwEKy_CP6vVEu0msa3yBgNnH5xGuQA9L4Sj7SnIZrTs3ZdepJ99DrZXdo_QzujEFD3YB_E51bEynzxGJbZI8k-ZdcFd2F99a-hAaBGHxwgSoczPutSC7R8fLPPnG4fVQ83s_lqGncoPMkSldI43F7FrEIgaSA8aB9sYZnkcAIWYEYVoYGNx6abmmJBSH96YkhXXcRxcR-CBoRkvIhA0kRRzBb0Q6_1usMAHBZc"
-                  alt="Anandhu K."
-                  className="w-14 h-14 rounded-full border-2 border-emerald-800 object-cover shadow-sm"
-                />
+                {user.profilePic ? (
+                  <img
+                    src={user.profilePic}
+                    alt={user.fullName}
+                    className="w-14 h-14 rounded-full border-2 border-emerald-800 object-cover shadow-sm"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-emerald-800 text-white border-2 border-emerald-800 flex items-center justify-center font-bold text-lg shadow-sm uppercase">
+                    {user.fullName ? user.fullName.charAt(0) : "U"}
+                  </div>
+                )}
                 <div>
                   <h2 className="font-bold text-slate-800 text-sm">{user.fullName}</h2>
                   <p className="text-xs text-slate-500">{user.email}</p>

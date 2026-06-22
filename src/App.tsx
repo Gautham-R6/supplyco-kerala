@@ -47,10 +47,10 @@ export default function App() {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email || "",
                 fullName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
-                phone: "",
+                phone_number: "",
                 dob: "",
-                addressLine1: "",
-                city: "",
+                address_line1: "",
+                city_place: "",
                 district: "",
                 state: "Kerala",
                 pincode: "",
@@ -318,11 +318,17 @@ export default function App() {
               {/* Desktop Side Nav Menu (Hidden on viewport < 768px) */}
               <aside className="hidden md:flex md:col-span-3 flex-col gap-2 bg-[#fdfbf7] border border-[#c3c6d1] rounded-2xl p-4 h-fit sticky top-20 shadow-sm">
                 <div className="flex items-center gap-3 pb-4 mb-2 border-b border-slate-100">
-                  <img
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCESFr7dzPNBqU449PdjF-XH0pTeUl5-0LnTL3I-YwEKy_CP6vVEu0msa3yBgNnH5xGuQA9L4Sj7SnIZrTs3ZdepJ99DrZXdo_QzujEFD3YB_E51bEynzxGJbZI8k-ZdcFd2F99a-hAaBGHxwgSoczPutSC7R8fLPPnG4fVQ83s_lqGncoPMkSldI43F7FrEIgaSA8aB9sYZnkcAIWYEYVoYGNx6abmmJBSH96YkhXXcRxcR-CBoRkvIhA0kRRzBb0Q6_1usMAHBZc"
-                    alt="Quick summary head"
-                    className="w-10 h-10 rounded-full border border-emerald-800 object-cover"
-                  />
+                  {user.profilePic ? (
+                    <img
+                      src={user.profilePic}
+                      alt="Quick summary head"
+                      className="w-10 h-10 rounded-full border border-emerald-800 object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-emerald-800 text-white border border-emerald-800 flex items-center justify-center font-bold text-sm uppercase">
+                      {user.fullName ? user.fullName.charAt(0) : "U"}
+                    </div>
+                  )}
                   <div>
                     <h3 className="font-bold text-slate-800 text-xs">{user.fullName}</h3>
                     <span className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider block">

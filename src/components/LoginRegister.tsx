@@ -11,15 +11,15 @@ interface LoginRegisterProps {
 
 export default function LoginRegister({ onAuthenticated }: LoginRegisterProps) {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("anandhu.k@example.com");
-  const [password, setPassword] = useState("password123");
-  const [fullName, setFullName] = useState("Anandhu K.");
-  const [dob, setDob] = useState("1988-05-12");
-  const [place, setPlace] = useState("Trivandrum");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [dob, setDob] = useState("");
+  const [place, setPlace] = useState("");
   const [stateValue, setStateValue] = useState("KL");
   const [zone, setZone] = useState("East Fort Area");
   const [selectedStore, setSelectedStore] = useState("tvm_eastfort");
-  const [phone, setPhone] = useState("+91 98765 43210");
+  const [phone, setPhone] = useState("");
   const [rationCardNumber, setRationCardNumber] = useState("");
   const [rationCardType, setRationCardType] = useState<"AAY" | "PHH" | "NPS" | "NPNS">("PHH");
   const [error, setError] = useState("");
@@ -38,10 +38,10 @@ export default function LoginRegister({ onAuthenticated }: LoginRegisterProps) {
         uid: firebaseUser.uid,
         email: firebaseUser.email || email,
         fullName: email === "anandhu.k@example.com" ? "Anandhu K." : email.split("@")[0],
-        phone: "",
+        phone_number: "",
         dob: "",
-        addressLine1: "",
-        city: "",
+        address_line1: "",
+        city_place: "",
         district: "",
         state: "Kerala",
         pincode: "",
@@ -72,10 +72,10 @@ export default function LoginRegister({ onAuthenticated }: LoginRegisterProps) {
         uid: firebaseUser.uid,
         fullName,
         email,
-        phone,
+        phone_number: phone,
         dob,
-        addressLine1: "TC 12/345, Kowdiar PO",
-        city: place,
+        address_line1: "TC 12/345, Kowdiar PO",
+        city_place: place,
         district: "Thiruvananthapuram",
         state: stateValue === "KL" ? "Kerala" : "Other State",
         pincode: "695003",

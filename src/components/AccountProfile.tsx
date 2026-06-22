@@ -11,11 +11,11 @@ interface AccountProfileProps {
 export default function AccountProfile({ user, onUpdateUser }: AccountProfileProps) {
   const [fullName, setFullName] = useState(user.fullName);
   const [email, setEmail] = useState(user.email);
-  const [phone, setPhone] = useState(user.phone);
+  const [phone, setPhone] = useState(user.phone_number);
   const [dob, setDob] = useState(user.dob);
 
-  const [addressLine1, setAddressLine1] = useState(user.addressLine1);
-  const [city, setCity] = useState(user.city);
+  const [addressLine1, setAddressLine1] = useState(user.address_line1);
+  const [city, setCity] = useState(user.city_place);
   const [district, setDistrict] = useState(user.district);
   const [pincode, setPincode] = useState(user.pincode);
 
@@ -31,10 +31,10 @@ export default function AccountProfile({ user, onUpdateUser }: AccountProfilePro
       ...user,
       fullName,
       email,
-      phone,
+      phone_number: phone,
       dob,
-      addressLine1,
-      city,
+      address_line1: addressLine1,
+      city_place: city,
       district,
       activeStoreId,
       notificationsEnabled,
@@ -69,11 +69,30 @@ export default function AccountProfile({ user, onUpdateUser }: AccountProfilePro
           <div className="bg-white rounded-2xl p-6 border border-amber-900/10 text-center relative overflow-hidden shadow-sm">
             <div className="absolute top-0 left-0 right-0 h-20 bg-emerald-800/10"></div>
             <div className="relative z-10 pt-4 flex flex-col items-center">
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCESFr7dzPNBqU449PdjF-XH0pTeUl5-0LnTL3I-YwEKy_CP6vVEu0msa3yBgNnH5xGuQA9L4Sj7SnIZrTs3ZdepJ99DrZXdo_QzujEFD3YB_E51bEynzxGJbZI8k-ZdcFd2F99a-hAaBGHxwgSoczPutSC7R8fLPPnG4fVQ83s_lqGncoPMkSldI43F7FrEIgaSA8aB9sYZnkcAIWYEYVoYGNx6abmmJBSH96YkhXXcRxcR-CBoRkvIhA0kRRzBb0Q6_1usMAHBZc"
-                alt="Account Headshot"
-                className="w-24 h-24 rounded-full border-4 border-white shadow-md object-cover mb-3"
-              />
+              {user.profilePic ? (
+                <div className="relative group mb-3">
+                  <img
+                    src={user.profilePic}
+                    alt="Account Headshot"
+                    className="w-24 h-24 rounded-full border-4 border-white shadow-md object-cover"
+                  />
+                  <button type="button" onClick={() => alert("Photo upload feature coming soon!")} className="absolute inset-0 bg-black/40 text-white text-[10px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center">
+                    Change Photo
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 mb-3">
+                  <div className="w-24 h-24 rounded-full bg-emerald-800 text-white border-4 border-white shadow-md flex items-center justify-center font-bold text-3xl uppercase relative group">
+                    <span>{fullName ? fullName.charAt(0) : "U"}</span>
+                    <button type="button" onClick={() => alert("Photo upload feature coming soon!")} className="absolute inset-0 bg-black/40 text-white text-[10px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center">
+                      Add Photo
+                    </button>
+                  </div>
+                  <button type="button" onClick={() => alert("Photo upload feature coming soon!")} className="text-xs text-emerald-800 font-bold hover:underline">
+                    Add profile picture
+                  </button>
+                </div>
+              )}
               <h3 className="font-extrabold text-slate-800 text-base">{fullName}</h3>
               <p className="text-xs text-slate-500 font-semibold mb-3">{email}</p>
               <span className="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full text-[10px] font-bold">

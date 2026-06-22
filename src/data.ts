@@ -38,10 +38,10 @@ export const STORES: StoreLocation[] = [
 export const INITIAL_USER: UserProfile = {
   fullName: "Anandhu K.",
   email: "anandhu.k@example.com",
-  phone: "+91 98765 43210",
+  phone_number: "+91 98765 43210",
   dob: "1988-05-12",
-  addressLine1: "TC 12/345, Kowdiar PO",
-  city: "Trivandrum",
+  address_line1: "TC 12/345, Kowdiar PO",
+  city_place: "Trivandrum",
   district: "Thiruvananthapuram",
   state: "Kerala",
   pincode: "695003",

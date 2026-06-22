@@ -30,10 +30,10 @@ export interface UserProfile {
   username?: string;
   fullName: string;
   email: string;
-  phone: string;
+  phone_number: string;
   dob: string;
-  addressLine1: string;
-  city: string;
+  address_line1: string;
+  city_place: string;
   district: string;
   state: string;
   pincode: string;
@@ -44,6 +44,7 @@ export interface UserProfile {
   language: "english" | "malayalam" | "bilingual";
   rationCardNumber?: string;
   rationCardType?: "AAY" | "PHH" | "NPS" | "NPNS";
+  profilePic?: string;
 }
 
 export interface StoreLocation {
